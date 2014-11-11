@@ -1,0 +1,33 @@
+0   Echo Reply
+1   Reserved
+2   Reserved
+3   Destination Unreachable
+4   Source Quench
+5   Redirect Message
+6   Alternate Host Address
+7   Reserved
+8   Echo Request
+9   Router Advertisement
+10  Router Solicitation
+11  Time Exceeded
+12  Parameter Problem: Bad IP header
+13  Timestamp	
+14  Timestamp Reply	
+15  Information Request	
+16  Information Reply	
+17  Address Mask Request
+18  Address Mask Reply
+19  Reserved for security
+30  Traceroute
+31  Datagram Conversion Error
+32  Mobile Host Redirect
+33  Where-Are-You (originally meant for IPv6)
+34  Here-I-Am (originally meant for IPv6)
+35  Mobile Registration Request
+36  Mobile Registration Reply
+37  Domain Name Request
+38  Domain Name Reply
+39  SKIP Algorithm Discovery Protocol, Simple Key-Management for Internet Protocol
+40  Photuris, Security failures
+41  ICMP for experimental mobility protocols such as Seamoby [RFC4065]
+42 through 
