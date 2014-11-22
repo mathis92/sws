@@ -61,25 +61,30 @@ public class PacketReceiver implements Runnable {
         PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
             @Override
             public void nextPacket(PcapPacket packet, String user) {
+                System.out.println("------------------------------> RX 1");
                 macWritten = 0;
-                
+
                 if (packet != null) {
-                    System.out.println("PacketReceiverSTART -> next packet" + acl.checkAcl(packet, "IN"));
                     analyzer.analyzePacket(packet);
                     statistic.storeDataIn(analyzer.getPacketProtocols());
 
                     Packet pckt = null;
                     if (!acl.getAclIn().isEmpty()) {
-                        if (acl.checkAcl(packet, "IN").equals(false)) {
+                        System.out.println("------------------------------> RX 2");
+                        if (!acl.checkAcl(packet, "IN")) {
                             pckt = new Packet(packet, device, pcap, "nOK");
-                            
-                            System.out.println("filter zistil nevhodny packet");
+                            System.out.println("packet na vstupe IN -> zablokovany");
                         } else {
                             pckt = new Packet(packet, device, pcap, "OK");
-                            System.out.println("packet nevyhovuje filtru");
+                            System.out.println("packet na vstupe IN -> povoleny");
+                        }
+                        if (acl.checkAcl(packet, "IN") == null) {
+
                         }
                     } else {
+                        System.out.println("------------------------------> RX 3");
                         pckt = new Packet(packet, device, pcap, "OK");
+                        System.out.println("packet na vstupe IN -> povoleny");
                     }
 
                     buffer.add(pckt);
@@ -115,7 +120,7 @@ public class PacketReceiver implements Runnable {
     public void start() {
         this.run = true;
     }
-    
+
     public void stop() {
         this.run = false;
     }

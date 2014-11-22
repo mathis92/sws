@@ -159,6 +159,12 @@ public class MainServlet extends HttpServlet {
                     } else {
                         ali.setDstPort(null);
                     }
+                    System.out.println("VYTIAHNUTE Z POSTU " + request.getParameter("optionsRadios"));
+                    if (request.getParameter("optionsRadios").equals("allow")){
+                        ali.setAction(Boolean.TRUE);
+                    }else { 
+                        ali.setAction(Boolean.FALSE);
+                    }
                     rec.getAcl().addAclItem(ali, request.getParameter("direction"));
                     break;
                 }
@@ -179,7 +185,7 @@ public class MainServlet extends HttpServlet {
         if (port != null) {
             switch (direction) {
                 case 0: {
-                    line += "  <div class=\"panel-heading\">Filter on Port " + port.getDevice().getName() + "Direction : in </div>\n"
+                    line += "  <div class=\"panel-heading\">Filter on Port " + port.getDevice().getName() + " Direction : in </div>\n"
                             + "  <table class=\"table\"><head><tr><th>#</th><th><span class=\"glyphicon glyphicon-resize-small\"></span> Filter item </th><th><span class=\"glyphicon glyphicon-list\"></span> Filter item data</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
                             + "<th> </th>"
                             + "</tr></head>\n";
@@ -432,21 +438,19 @@ public class MainServlet extends HttpServlet {
                         + "                 </div>"
                         + "                 <div class=\"form-group\">\n"
                         + "                     <div class=\"col-sm-offset-2 col-sm-10\">\n"
-                        + "                         <div class=\"checkbox\">\n"
+                        + "                         <div class=\"radio\">\n"
                         + "                             <label>\n"
-                        + "                                 <input type=\"checkbox\"> Remember me\n"
-                        + "                             </label>\n"
-                        + "                         </div>\n"
-                        + "                     </div>\n"
-                        + "                 </div>"
-                        + "                 <div class=\"form-group\">\n"
-                        + "                     <label for=\"b\" class=\"col-sm-2 control-label\">Protocol</label>\n"
-                        + "                         <div class=\"col-sm-10\">\n"
-                        + "                             <select name=\"b\">\n"
-                        + "                             <option value=\"0800\">IPv4</option>\n"
-                        + "                             <option value=\"0806\">ARP</option>\n"
-                        + "                             </select>"
+                        + "                                 <input type=\"radio\" name=\"optionsRadios\" id=\"allowRadio\" value=\"allow\" checked>\n"
+                        + "                                     Allow\n"
+                        + "                                 </label>\n"
                         + "                         </div>"
+                        + "                          <div class=\"radio\">\n"
+                        + "                             <label>\n"
+                        + "                                 <input type=\"radio\" name=\"optionsRadios\" id=\"denyRadio\" value=\"deny\" checked>\n"
+                        + "                                     Deny\n"
+                        + "                                 </label>\n"
+                        + "                          </div>"
+                        + "                     </div>\n"
                         + "                 </div>"
                         + "         </div>\n"
                         + "         <div class=\"modal-footer\">\n"
@@ -488,17 +492,17 @@ public class MainServlet extends HttpServlet {
                 String port = this.manager.getMacTable().getInterfaceList().get(0).getDevice().getName();
                 if (request.getParameter("port") != null && !request.getParameter("port").trim().isEmpty()) {
                     port = request.getParameter("port");
-                   // response.sendRedirect("/statistics.html");
+                    // response.sendRedirect("/statistics.html");
                 }
                 if (request.getParameter("flush") != null && !request.getParameter("flush").trim().isEmpty()) {
                     String flush[] = request.getParameter("flush").split("/");
-                    for(PacketReceiver rcvr : this.manager.getReceiverList()){
-                        if(rcvr.getDevice().getName().equals(flush[0])){
+                    for (PacketReceiver rcvr : this.manager.getReceiverList()) {
+                        if (rcvr.getDevice().getName().equals(flush[0])) {
                             rcvr.getStatistic().flushStatistics(flush[1]);
                             response.sendRedirect("/statistics.html?port=" + flush[0]);
                         }
                     }
-                    
+
                 }
                 String pagehtml = "<div class=\"container-fluid\">\n"
                         + "<ul class=\"nav nav-tabs\" role=\"tablist\">\n"
@@ -515,14 +519,14 @@ public class MainServlet extends HttpServlet {
                 pagehtml += "<div class=\"panel panel-default\">\n"
                         + "  <div class=\"panel-heading\">Direction: IN on port " + port + "</div>\n"
                         + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Protocol name</th><th><span class=\"glyphicon glyphicon-list\"></span> RM OSI layer</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
-                        + "<th><a type=\"button\" class=\"close\" href=\"/statistics.html?flush=" + port +"/"+ "IN" + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
+                        + "<th><a type=\"button\" class=\"close\" href=\"/statistics.html?flush=" + port + "/" + "IN" + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
                         + "</tr></head>\n";
                 pagehtml += addStatistics(port, 0);
                 pagehtml += "</div></table></div><br>";
                 pagehtml += "<div class=\"panel panel-default\">\n"
                         + "  <div class=\"panel-heading\" >Direction: OUT on port " + port + "</div>\n"
                         + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Protocol name</th><th><span class=\"glyphicon glyphicon-list\"></span> RM OSI layer</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
-                        + "<th><a type=\"button\" class=\"close\" href=\"/statistics.html?flush=" + port +"/"+ "OUT" + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
+                        + "<th><a type=\"button\" class=\"close\" href=\"/statistics.html?flush=" + port + "/" + "OUT" + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
                         + "</tr></head>\n";
                 pagehtml += addStatistics(port, 1);
                 pagehtml += "</div></table></div>";
@@ -544,7 +548,7 @@ public class MainServlet extends HttpServlet {
                             + setInterfaceState(interf) + "</tr>";
                 }
                 pagehtml += "</table>\n"
-                        + "</div></div></div>";
+                        + "</div></div>";
                 html += pagehtml;
                 break;
             }

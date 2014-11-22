@@ -23,6 +23,7 @@ public class AccesListItem {
     private Integer priority;
     private Integer direction;
     private Integer blockCount = 0;
+    private Boolean action;
 
     public AccesListItem(Integer priority) {
     this.priority = priority;
@@ -98,6 +99,14 @@ public class AccesListItem {
 
     public byte[] getSrcMacAddress() {
         return srcMacAddress;
+    }
+
+    public Boolean getAction() {
+        return action;
+    }
+
+    public void setAction(Boolean action) {
+        this.action = action;
     }
 
     public void setDstIpAddress(byte[] dstIpAddress) {
