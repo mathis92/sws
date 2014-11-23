@@ -19,6 +19,7 @@ public class Packet {
     PcapIf device;
     Pcap pcap;
     String action;
+    Boolean isSpan = false;
 
     public Packet(PcapPacket packet, PcapIf device, Pcap pcap) {
         this.packet = packet;
@@ -36,11 +37,21 @@ public class Packet {
     public PcapIf getDevice() {
         return device;
     }
+public void tagSpan(){
+    isSpan = true;
+}
+    public Boolean IsSpan() {
+        return isSpan;
+    }
 
     public PcapPacket getPacket() {
         return packet;
     }
 
+    public void setPacket(PcapPacket packet) {
+        this.packet = packet;
+    }
+    
     public String getAction() {
         return action;
     }

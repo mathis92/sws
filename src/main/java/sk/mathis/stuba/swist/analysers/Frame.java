@@ -30,6 +30,7 @@ public final class Frame {
     public Integer comId;
     public String protocol;
     public String applicationProtocol;
+    public boolean isVlan = false;
 
     public Frame(PcapPacket packet) {
         this.packet = packet;
@@ -53,6 +54,8 @@ public final class Frame {
                 isARP = true;
                 arp = new ArpParser(packet);
                 arp.analyse();
+            }else if (etherTypeInt == 33024){
+                isVlan = true;
             }
 
         }

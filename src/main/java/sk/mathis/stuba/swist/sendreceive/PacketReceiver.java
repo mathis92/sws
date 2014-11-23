@@ -21,6 +21,7 @@ import sk.mathis.stuba.swist.equip.Statistics;
 import sk.mathis.stuba.swist.analysers.Analyser;
 import sk.mathis.stuba.swist.acl.AcccessList;
 import sk.mathis.stuba.swist.acl.AccesListItem;
+import sk.mathis.stuba.swist.equip.DataTypeHelper;
 
 /**
  *
@@ -61,7 +62,7 @@ public class PacketReceiver implements Runnable {
         PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
             @Override
             public void nextPacket(PcapPacket packet, String user) {
-                System.out.println("------------------------------> RX 1");
+                logger.debug("------------------------------> RX 1");
                 macWritten = 0;
 
                 if (packet != null) {
@@ -70,23 +71,22 @@ public class PacketReceiver implements Runnable {
 
                     Packet pckt = null;
                     if (!acl.getAclIn().isEmpty()) {
-                        System.out.println("------------------------------> RX 2");
+                        logger.debug("------------------------------> RX 2");
                         if (!acl.checkAcl(packet, "IN")) {
                             pckt = new Packet(packet, device, pcap, "nOK");
-                            System.out.println("packet na vstupe IN -> zablokovany");
+                            logger.debug("packet na vstupe IN -> zablokovany");
                         } else {
                             pckt = new Packet(packet, device, pcap, "OK");
-                            System.out.println("packet na vstupe IN -> povoleny");
+                            logger.debug("packet na vstupe IN -> povoleny");
                         }
                         if (acl.checkAcl(packet, "IN") == null) {
 
                         }
                     } else {
-                        System.out.println("------------------------------> RX 3");
+                        logger.debug("------------------------------> RX 3");
                         pckt = new Packet(packet, device, pcap, "OK");
-                        System.out.println("packet na vstupe IN -> povoleny");
+                        logger.debug("packet na vstupe IN -> povoleny");
                     }
-
                     buffer.add(pckt);
 
                     for (Interface iface : macTable.getInterfaceList()) {
@@ -94,14 +94,15 @@ public class PacketReceiver implements Runnable {
 
                             for (MacAddress array : iface.getSrcMacaddressList()) {
                                 if (Arrays.equals(array.getSrcMacAddress(), packet.getByteArray(6, 6))) {
-                                    //    System.out.println("uz je zapisana macadressa");
+                                    //    logger.debug("uz je zapisana macadressa");
                                     array.setLastActiveTime();
                                     iface.setActive();
                                     macWritten = 1;
                                 }
                             }
                             if (iface.getSrcMacaddressList().isEmpty() || macWritten.equals(0)) {
-                                //              System.out.println("adding mac address" + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
+                                //              logger.debug("adding mac address" + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
+                                logger.debug("pridavam mac adress do mac tabulky " + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
                                 iface.addMacAddress(packet.getByteArray(6, 6));
                             }
                         }
@@ -112,7 +113,7 @@ public class PacketReceiver implements Runnable {
         };
 
         while (run) {
-            //        System.out.println("bezi mi tu while");
+            //        logger.debug("bezi mi tu while");
             pcap.loop(Pcap.LOOP_INFINITE, jpacketHandler, "");
         }
     }
@@ -127,7 +128,7 @@ public class PacketReceiver implements Runnable {
 
     public void startThread() {
         start();
-        System.out.println("zapinam thread na " + device.getName());
+        logger.debug("zapinam thread na " + device.getName());
         new Thread(this).start();
     }
 

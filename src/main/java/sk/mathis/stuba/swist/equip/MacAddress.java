@@ -8,27 +8,29 @@ package sk.mathis.stuba.swist.equip;
 import java.util.Date;
 
 public class MacAddress {
-            private byte[] srcMacAddress;
-        private Date lastActiveTime;
-        public MacAddress(byte[] srcMacAddress, Date lastActiveTime) {
-            this.srcMacAddress = srcMacAddress;
-            this.lastActiveTime = lastActiveTime;
-        }
 
-        public long getLastActiveTime() {
-            return (new Date().getTime() - lastActiveTime.getTime())/1000;
-        }
+    private byte[] srcMacAddress;
+    private Date lastActiveTime;
 
-        public byte[] getSrcMacAddress() {
-            return srcMacAddress;
-        }
+    public MacAddress(byte[] srcMacAddress, Date lastActiveTime) {
+        this.srcMacAddress = srcMacAddress;
+        this.lastActiveTime = lastActiveTime;
+    }
 
-        public void setLastActiveTime() {
-            this.lastActiveTime = new Date();
-        }
+    public long getLastActiveTime() {
+        return (new Date().getTime() - lastActiveTime.getTime()) / 1000;
+    }
 
-        public void setSrcMacAddress(byte[] srcMacAddress) {
-            this.srcMacAddress = srcMacAddress;
-        }
-       
+    public byte[] getSrcMacAddress() {
+        return srcMacAddress;
+    }
+
+    public void setLastActiveTime() {
+        this.lastActiveTime = new Date();
+    }
+
+    public void setSrcMacAddress(byte[] srcMacAddress) {
+        this.srcMacAddress = srcMacAddress;
+    }
+
 }

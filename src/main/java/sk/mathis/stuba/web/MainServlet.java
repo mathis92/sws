@@ -8,6 +8,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.jnetpcap.PcapIf;
+import org.slf4j.Logger;
 import sk.mathis.stuba.swist.acl.AccesListItem;
 import sk.mathis.stuba.swist.equip.DataTypeHelper;
 import sk.mathis.stuba.swist.equip.Interface;
@@ -15,12 +17,14 @@ import sk.mathis.stuba.swist.sendreceive.SwitchManager;
 import sk.mathis.stuba.swist.equip.MacAddress;
 import sk.mathis.stuba.swist.sendreceive.PacketReceiver;
 import sk.mathis.stuba.swist.equip.ProtocolItem;
+import sk.mathis.stuba.swist.sendreceive.DeviceFinder;
 
 public class MainServlet extends HttpServlet {
 
     private final SwitchManager manager;
     private final List<WebMenuItem> wmiList = new ArrayList<>();
     private String currentPage;
+    private Logger logger = org.slf4j.LoggerFactory.getLogger(MainServlet.class);
 
     public MainServlet(SwitchManager manager) {
         this.manager = manager;
@@ -29,7 +33,7 @@ public class MainServlet extends HttpServlet {
         this.wmiList.add(new WebMenuItem("Access lists (filters)", "/acl.html", "minus"));
         this.wmiList.add(new WebMenuItem("Mac Table", "/status.html", "cloud"));
         this.wmiList.add(new WebMenuItem("Statistics", "/statistics.html", "cloud"));
-        this.wmiList.add(new WebMenuItem("Span", "/help.html", "question-sign"));
+        this.wmiList.add(new WebMenuItem("Span", "/span.html", "question-sign"));
     }
 
     private String getMacAddresses(Interface interf) {
@@ -114,63 +118,70 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if (request.getRequestURI().equals("/acl.html")) {
+        switch (request.getRequestURI()) {
+            case "/acl.html":
+                for (PacketReceiver rec : manager.getReceiverList()) {
+                    if (rec.getDevice().getName().equals(request.getParameter("port"))) {
+                        AccesListItem ali = new AccesListItem(rec.getAcl().getAcl("IN").size() + 1);
+                        if (!request.getParameter("srcMAC").equals("")) {
+                            ali.setSrcMacAddress(DataTypeHelper.parseStringMacAddress(request.getParameter("srcMAC")));
 
-            for (PacketReceiver rec : manager.getReceiverList()) {
-                if (rec.getDevice().getName().equals(request.getParameter("port"))) {
-                    AccesListItem ali = new AccesListItem(rec.getAcl().getAcl("IN").size() + 1);
-                    if (!request.getParameter("srcMAC").equals("")) {
-                        ali.setSrcMacAddress(DataTypeHelper.parseStringMacAddress(request.getParameter("srcMAC")));
+                        } else {
+                            ali.setSrcMacAddress(null);
+                        }
+                        if (!request.getParameter("dstMAC").equals("")) {
+                            ali.setDstMacAddress(DataTypeHelper.parseStringMacAddress(request.getParameter("dstMAC")));
 
-                    } else {
-                        ali.setSrcMacAddress(null);
-                    }
-                    if (!request.getParameter("dstMAC").equals("")) {
-                        ali.setDstMacAddress(DataTypeHelper.parseStringMacAddress(request.getParameter("dstMAC")));
+                        } else {
+                            ali.setDstMacAddress(null);
+                        }
+                        if (!request.getParameter("srcIP").equals("")) {
+                            ali.setSrcIpAddress(DataTypeHelper.parseStringIpAddress(request.getParameter("srcIP")));
 
-                    } else {
-                        ali.setDstMacAddress(null);
-                    }
-                    if (!request.getParameter("srcIP").equals("")) {
-                        ali.setSrcIpAddress(DataTypeHelper.parseStringIpAddress(request.getParameter("srcIP")));
+                        } else {
+                            ali.setSrcIpAddress(null);
+                        }
+                        if (!request.getParameter("dstIP").equals("")) {
+                            ali.setDstIpAddress(DataTypeHelper.parseStringIpAddress(request.getParameter("srcIP")));
 
-                    } else {
-                        ali.setSrcIpAddress(null);
-                    }
-                    if (!request.getParameter("dstIP").equals("")) {
-                        ali.setDstIpAddress(DataTypeHelper.parseStringIpAddress(request.getParameter("srcIP")));
+                        } else {
+                            ali.setDstIpAddress(null);
+                        }
+                        if (!request.getParameter("ipv4Protocol").equals("any")) {
+                            ali.setProtocol(Integer.parseInt(request.getParameter("ipv4Protocol")));
 
-                    } else {
-                        ali.setDstIpAddress(null);
+                        } else {
+                            ali.setProtocol(null);
+                        }
+                        if (!request.getParameter("srcTcpPort").equals("any")) {
+                            ali.setSrcPort(Integer.parseInt(request.getParameter("srcTcpPort")));
+                        } else {
+                            ali.setSrcPort(null);
+                        }
+                        if (!request.getParameter("dstTcpPort").equals("any")) {
+                            ali.setDstPort(Integer.parseInt(request.getParameter("dstTcpPort")));
+                        } else {
+                            ali.setDstPort(null);
+                        }
+                        logger.debug("VYTIAHNUTE Z POSTU " + request.getParameter("optionsRadios"));
+                        if (request.getParameter("optionsRadios").equals("allow")) {
+                            ali.setAction(Boolean.TRUE);
+                        } else {
+                            ali.setAction(Boolean.FALSE);
+                        }
+                        rec.getAcl().addAclItem(ali, request.getParameter("direction"));
+                        break;
                     }
-                    if (!request.getParameter("ipv4Protocol").equals("any")) {
-                        ali.setProtocol(Integer.parseInt(request.getParameter("ipv4Protocol")));
-
-                    } else {
-                        ali.setProtocol(null);
-                    }
-                    if (!request.getParameter("srcTcpPort").equals("any")) {
-                        ali.setSrcPort(Integer.parseInt(request.getParameter("srcTcpPort")));
-                    } else {
-                        ali.setSrcPort(null);
-                    }
-                    if (!request.getParameter("dstTcpPort").equals("any")) {
-                        ali.setDstPort(Integer.parseInt(request.getParameter("dstTcpPort")));
-                    } else {
-                        ali.setDstPort(null);
-                    }
-                    System.out.println("VYTIAHNUTE Z POSTU " + request.getParameter("optionsRadios"));
-                    if (request.getParameter("optionsRadios").equals("allow")){
-                        ali.setAction(Boolean.TRUE);
-                    }else { 
-                        ali.setAction(Boolean.FALSE);
-                    }
-                    rec.getAcl().addAclItem(ali, request.getParameter("direction"));
-                    break;
                 }
-            }
+                response.sendRedirect("/acl.html");
+                break;
+            case "/span.html":
+                
+                
+                manager.setSpan(request.getParameter("srcPort"), request.getParameter("dstPort"),request.getParameter("strip"));
 
-            response.sendRedirect("/acl.html");
+                response.sendRedirect("/span.html");
+                break;
         }
     }
 
@@ -252,6 +263,14 @@ public class MainServlet extends HttpServlet {
         return line;
     }
 
+    private String addSpanStats() {
+        String line = "";
+        for (PcapIf srcPort : manager.getSpan().getSrcPort()) {
+            line += "<tr><td>" + srcPort.getName() + "</td><td>" + manager.getSpan().getDstPort().getName() + "</td><td>" + manager.getSpan().getSniffCount() + "</td></tr>";
+        }
+        return line;
+    }
+
     private String addStatistics(String portName, Integer direction) {
         String line = "";
         PacketReceiver port = null;
@@ -266,13 +285,55 @@ public class MainServlet extends HttpServlet {
             switch (direction) {
                 case 0: {
                     for (ProtocolItem item : port.getStatistic().getProtocolListIn()) {
-                        line += "<tr><td>" + item.getProtocol() + "</td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                        line += "<tr><td>" + item.getProtocol() + "</td><td>-</td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                        switch (item.getProtocol()) {
+                            case "TCP": {
+                                // line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                                int i = 0;
+                                for (String portis : item.getTcpPort()) {
+                                    line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getTcpPortCount().get(i) + "</td></tr>";
+                                    i++;
+                                }
+                                break;
+                            }
+                            case "UDP": {
+                                //   line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                                int i = 0;
+                                for (String portis : item.getUdpPort()) {
+                                    line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getUdpPortCount().get(i) + "</td></tr>";
+                                    i++;
+                                }
+                                break;
+                            }
+                        }
+
                     }
                     break;
                 }
                 case 1: {
                     for (ProtocolItem item : port.getStatistic().getProtocolListOut()) {
-                        line += "<tr><td>" + item.getProtocol() + "</td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                        line += "<tr><td>" + item.getProtocol() + "</td><td>-</td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                        switch (item.getProtocol()) {
+                            case "TCP": {
+                                // line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                                int i = 0;
+                                for (String portis : item.getTcpPort()) {
+                                    line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getTcpPortCount().get(i) + "</td></tr>";
+                                    i++;
+                                }
+                                break;
+                            }
+                            case "UDP": {
+                                //   line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
+                                int i = 0;
+                                for (String portis : item.getUdpPort()) {
+                                    line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getUdpPortCount().get(i) + "</td></tr>";
+                                    i++;
+                                }
+                                break;
+                            }
+                        }
+
                     }
                     break;
                 }
@@ -297,10 +358,18 @@ public class MainServlet extends HttpServlet {
                 break;
             }
             case "/status.html": {
+                if (request.getParameter("flush") != null && !request.getParameter("flush").trim().isEmpty()) {
+                    if (request.getParameter("flush").equals("jop")) {
+                        this.manager.getMacTable().flushMacTable();
+                        response.sendRedirect("/status.html");
+                    }
+                }
+
                 String pagehtml = "<div class=\"container-fluid\">\n";
 
                 pagehtml += "<div class=\"row\">";
-                pagehtml += "<table class=\"table\"><thead><tr><th><span class=\"glyphicon glyphicon-hand-right\"></span> Port Name</th><th><span class=\"glyphicon glyphicon-flag\"></span> Mac address</span></th><th><span class=\"glyphicon glyphicon-time\"></span> Inactive for</th></tr></thead>";
+                pagehtml += "<table class=\"table\"><thead><tr><th><span class=\"glyphicon glyphicon-hand-right\"></span> Port Name</th><th><span class=\"glyphicon glyphicon-flag\"></span> Mac address</span></th><th><span class=\"glyphicon glyphicon-time\"></span> Inactive for</th>"
+                        + "<th><a type=\"button\" class=\"close\" href=\"/status.html?flush=jop\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th></tr></thead>";
                 for (Interface interf : this.manager.getMacTable().getInterfaceList()) {
 
                     pagehtml += "<tr><td><span class=\"glyphicon glyphicon-fire\"></span> " + interf.getDevice().getName() + "</td><td>" + getMacAddresses(interf) + "</td><td>" + getLastActiveTime(interf) + "</td>";
@@ -320,7 +389,7 @@ public class MainServlet extends HttpServlet {
                 }
                 if (request.getParameter("delete") != null && !request.getParameter("delete").trim().isEmpty()) {
                     String deleteSelectedFilter = request.getParameter("delete");
-                    System.out.println(deleteSelectedFilter);
+                    logger.debug(deleteSelectedFilter);
                     String sa[] = deleteSelectedFilter.split("/");
                     for (PacketReceiver rcvr : this.manager.getReceiverList()) {
                         if (rcvr.getDevice().getName().equals(sa[0])) {
@@ -485,9 +554,7 @@ public class MainServlet extends HttpServlet {
                 html += pagehtml;
                 break;
             }
-            case "/help.html": {
-                break;
-            }
+
             case "/statistics.html": {
                 String port = this.manager.getMacTable().getInterfaceList().get(0).getDevice().getName();
                 if (request.getParameter("port") != null && !request.getParameter("port").trim().isEmpty()) {
@@ -518,14 +585,14 @@ public class MainServlet extends HttpServlet {
                         + "  </li></ul>\n";
                 pagehtml += "<div class=\"panel panel-default\">\n"
                         + "  <div class=\"panel-heading\">Direction: IN on port " + port + "</div>\n"
-                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Protocol name</th><th><span class=\"glyphicon glyphicon-list\"></span> RM OSI layer</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
+                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Protocol name</th><th>Port</th><th><span class=\"glyphicon glyphicon-list\"></span> RM OSI layer</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
                         + "<th><a type=\"button\" class=\"close\" href=\"/statistics.html?flush=" + port + "/" + "IN" + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
                         + "</tr></head>\n";
                 pagehtml += addStatistics(port, 0);
                 pagehtml += "</div></table></div><br>";
                 pagehtml += "<div class=\"panel panel-default\">\n"
                         + "  <div class=\"panel-heading\" >Direction: OUT on port " + port + "</div>\n"
-                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Protocol name</th><th><span class=\"glyphicon glyphicon-list\"></span> RM OSI layer</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
+                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Protocol name</th><th>Port</th><th><span class=\"glyphicon glyphicon-list\"></span> RM OSI layer</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Count </th>"
                         + "<th><a type=\"button\" class=\"close\" href=\"/statistics.html?flush=" + port + "/" + "OUT" + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
                         + "</tr></head>\n";
                 pagehtml += addStatistics(port, 1);
@@ -551,6 +618,87 @@ public class MainServlet extends HttpServlet {
                         + "</div></div>";
                 html += pagehtml;
                 break;
+            }
+            case "/span.html": {
+                if (request.getParameter("stop") != null && !request.getParameter("stop").trim().isEmpty()) {
+                    if ((request.getParameter("stop")).equals("jop")) {
+                        manager.getSpan().stopSpan();
+                        manager.setSpan(null);
+                    }
+                    response.sendRedirect("/span.html");
+                }
+                String pagehtml = ""
+                        + "<br>"
+                        + "<button type=\"button\" class=\"btn btn-primary btn-lg\" data-toggle=\"modal\" data-target=\"#myModal\">\n"
+                        + "  Add filter item \n"
+                        + "</button>\n"
+                        + "<div class=\"modal fade\" id=\"myModal\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"myModalLabel\" aria-hidden=\"true\">\n"
+                        + "  <div class=\"modal-dialog\">\n"
+                        + "         <div class=\"modal-content\">\n"
+                        + "     <form role=\"form\" method=\"POST\" class=\"form-horizontal\">\n"
+                        + "             <div class=\"modal-header\">\n"
+                        + "                 <button type=\"button\" class=\"close\" data-dismiss=\"modal\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></button>\n"
+                        + "                 <h4 class=\"modal-title\" id=\"myModalLabel\">Modal title</h4>\n"
+                        + "             </div>\n"
+                        + "             <div class=\"modal-body\">\n"
+                        + "                 <div class=\"form-group\">\n"
+                        + "                     <label for=\"port\" class=\"col-sm-4 control-label\">Sniffing src Port</label>\n"
+                        + "                         <div class=\"col-sm-8\">\n"
+                        + "                             <select name=\"srcPort\">\n"
+                        + "                             <option value=\"eth1\">eth1</option>\n"
+                        + "                             <option value=\"eth2\">eth2</option>\n"
+                        + "                             <option value=\"eth3\">eth3</option>\n"
+                        + "                             </select>"
+                        + "                         </div>"
+                        + "                 </div>"
+                        + "             </div>\n"
+                        + "             <div class=\"modal-body\">\n"
+                        + "                 <div class=\"form-group\">\n"
+                        + "                     <label for=\"port\" class=\"col-sm-4 control-label\">Sniffing dst Port</label>\n"
+                        + "                         <div class=\"col-sm-8\">\n"
+                        + "                             <select name=\"dstPort\">\n"
+                        + "                             <option value=\"eth1\">eth1</option>\n"
+                        + "                             <option value=\"eth2\">eth2</option>\n"
+                        + "                             <option value=\"eth3\">eth3</option>\n"
+                        + "                             </select>"
+                        + "                         </div>"
+                        + "                 </div>"
+                        + "             </div>\n"
+                        + "             <div class=\"modal-body\">\n"
+                        + "                 <div class=\"form-group\">\n"
+                        + "                     <label for=\"checkbox\" class=\"col-sm-4 control-label\">Strip dot1Q tag</label>"
+                        + "                         <div class=\"checkbox\">"
+                        + "                         <label>\n"
+                        + "                             <input type=\"checkbox\"  name=\"strip\" id=\"strip\" value=\"checked\">"
+                        + "                         </label>\n"
+                        + "                         </div>"
+                        + "                 </div>"
+                        + "             </div>\n"
+                        + "         <div class=\"modal-footer\">\n"
+                        + "             <button type=\"button\" class=\"btn btn-danger\" data-dismiss=\"modal\">Close</button>\n"
+                        + "             <button type=\"submit\" class=\"btn btn-success\">Submit</button>\n"
+                        + "         </div>\n"
+                        + "     </form>"
+                        + "       </div>\n"
+                        + "  </div>\n"
+                        + "</div>"
+                        + "<br>";
+
+                pagehtml += "<div class=\"container-fluid\">\n"
+                        + "<br>"
+                        + "<div class=\"panel panel-default\">\n"
+                        + "  <div class=\"panel-heading\" >Sniffed ports</div>\n"
+                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Src. Port</th><th>Dst. Port</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Sniffed packet count </th>"
+                        + "<th><a type=\"button\" class=\"close\" href=\"/span.html?stop=jop\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
+                        + "</tr></head>\n";
+                if (manager.getSpan() != null) {
+                    pagehtml += addSpanStats();
+                }
+                pagehtml += "</div></table></div></div>";
+
+                html += pagehtml;
+                break;
+
             }
             default: {
                 html += this.getNotFoundPage();
@@ -585,15 +733,18 @@ public class MainServlet extends HttpServlet {
         html += this.getLinkedJavascript("/resource/js/bootstrap.js");
         html += "</head><body>";
         html += "<div class=\"container\" style=\"width:800px\">";
-        html += "<ul class=\"nav nav-tabs\" role=\"tablist\">";
-        // html += "<nav class=\"navbar navbar-inverse\" role=\"navigation\">";
-
+        // html += "<ul class=\"nav nav-tabs\" role=\"tablist\">";
+        html += "<nav class=\"navbar navbar-inverse\" role=\"navigation\">";
+        html += "<div class=\"collapse navbar-collapse\" id=\"navCollapse\">";
+        html += "<ul class=\"nav navbar-nav\">";
         for (WebMenuItem wmi : this.wmiList) {
             String activeClass = (this.currentPage.equals(wmi.getAddress())) ? " class=\"active\"" : "";
             String iconHtml = (wmi.getIcon() == null) ? "" : "<span class=\"glyphicon glyphicon-" + wmi.getIcon() + "\"></span> ";
             html += "<li" + activeClass + "><a href=\"" + wmi.getAddress() + "\">" + iconHtml + wmi.getTitle() + "</a></li>";
         }
-        html += "</ul>";
+        html += "<ul>";
+        html += "</div>";
+        html += "</nav>";
         return html;
     }
 

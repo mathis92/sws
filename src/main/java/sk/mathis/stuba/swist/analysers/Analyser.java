@@ -11,13 +11,15 @@ import java.util.ArrayList;
 import org.jnetpcap.packet.PcapPacket;
 import sk.mathis.stuba.swist.equip.DataTypeHelper;
 import sk.mathis.stuba.swist.equip.ProtocolItem;
-
+import sk.mathis.stuba.swist.analysers.ProtocolList;
 public class Analyser {
 
     private Frame frame;
 
-    public ArrayList<ProtocolItem> getPacketProtocols() {
+    public ProtocolList getPacketProtocols() {
         ArrayList<ProtocolItem> protocolList = new ArrayList<>();
+        String port = null;
+                
         if (frame.getFrameType().equals("Ethernet II")) {
             protocolList.add(new ProtocolItem("Ethernet II", 2));
             if (frame.getIsArp()) {
@@ -26,10 +28,10 @@ public class Analyser {
                 protocolList.add(new ProtocolItem("Ipv4", 3));
                 if (frame.getIpv4parser().isIsTcp()) {
                     protocolList.add(new ProtocolItem("TCP", 4));
-                    protocolList.add(new ProtocolItem(frame.getApplicationProtocol(), 4));
+                    port = frame.getApplicationProtocol();
                 } else if (frame.getIpv4parser().isIsUdp()) {
                     protocolList.add(new ProtocolItem("UDP", 4));
-                    protocolList.add(new ProtocolItem(frame.getApplicationProtocol(), 4));
+                    port = frame.getApplicationProtocol();
                 } else if (frame.getIpv4parser().getIsIcmp()) {
                     protocolList.add(new ProtocolItem("ICMP", 4));
                 }
@@ -37,7 +39,7 @@ public class Analyser {
         } else {
             protocolList.add(new ProtocolItem(frame.getFrameType(), 2));
         }
-        return protocolList;
+        return new ProtocolList(protocolList, port);
     }
 
     public void analyzePacket(PcapPacket packet) {

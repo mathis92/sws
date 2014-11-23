@@ -5,6 +5,9 @@
  */
 package sk.mathis.stuba.swist.equip;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author martinhudec
@@ -14,11 +17,17 @@ public class ProtocolItem {
     private Integer layer;
     private String protocol;
     private Integer count = 0;
-
+    private ArrayList<String> tcpPort = new ArrayList<>();
+    private ArrayList<Integer> tcpPortCount = new ArrayList<>();
+ private ArrayList<String> udpPort = new ArrayList<>();
+    private ArrayList<Integer> udpPortCount = new ArrayList<>();
+    
+    
     public ProtocolItem(String protocol, Integer layer) {
         this.protocol = protocol;
         this.layer = layer;
         this.count++;
+        
     }
 
       
@@ -45,4 +54,24 @@ public class ProtocolItem {
     public Integer getLayer() {
         return layer;
     }
+
+    public ArrayList<String> getTcpPort() {
+        return tcpPort;
+    }
+
+    public ArrayList<Integer> getTcpPortCount() {
+        return tcpPortCount;
+    }
+
+    public ArrayList<String> getUdpPort() {
+        return udpPort;
+    }
+
+    public ArrayList<Integer> getUdpPortCount() {
+        return udpPortCount;
+    }
+    
+    
+    
+    
 }

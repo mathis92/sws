@@ -8,8 +8,10 @@ package sk.mathis.stuba.swist.sendreceive;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.spi.LoggerFactory;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
+import org.slf4j.Logger;
 
 /**
  *
@@ -18,6 +20,7 @@ import org.jnetpcap.PcapIf;
 public final class DeviceFinder {
 
     public List<PcapIf> ethDevs = new ArrayList<>(); // Will be filled with NICs  
+    private Logger logger = org.slf4j.LoggerFactory.getLogger(DeviceFinder.class);
 
     public DeviceFinder() throws IOException {
         findDevices();
@@ -39,7 +42,7 @@ public final class DeviceFinder {
                 }
             }
         }
-        System.out.println("Network devices found:");
+        logger.debug("Network devices found:");
 
         int i = 0;
         for (PcapIf device : ethDevs) {

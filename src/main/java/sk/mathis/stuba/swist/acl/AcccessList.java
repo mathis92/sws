@@ -52,7 +52,7 @@ public class AcccessList {
     }
 
     public void deleteAclItem(Integer priority, String direction) {
-        System.out.println(priority + " " + direction);
+        logger.debug(priority + " " + direction);
         switch (direction) {
             case "IN":
                 aclIn.remove((int) priority);
@@ -80,26 +80,26 @@ public class AcccessList {
 
     public Boolean checkAcl(PcapPacket packet, String direction) {
         analyzer.analyzePacket(packet);
-        System.out.println("----------------> " + ((direction.equals("IN") ? "FOO" : "BAR")));
-        System.out.println("------------------------------> PICA BULHARSKA (" + this.toString() + ")");
+        logger.debug("----------------> " + ((direction.equals("IN") ? "FOO" : "BAR")));
+        logger.debug("------------------------------> PICA BULHARSKA (" + this.toString() + ")");
         for (AccesListItem ali : ((direction.equals("IN")) ? aclIn : aclOut)) {
-            System.out.println("------------------------------> MEOW");
+            logger.debug("------------------------------> MEOW");
             if (Arrays.equals(ali.getSrcMacAddress(), analyzer.getFrame().getSrcMacAddress()) || ali.getSrcMacAddress() == null) {
-                System.out.println("------------------------------> A");
+                logger.debug("------------------------------> A");
                 logger.debug("smer " + direction + " src mac adresa " + DataTypeHelper.macAdressConvertor(analyzer.getFrame().getSrcMacAddress()) + " dst mac addressa " + DataTypeHelper.macAdressConvertor(analyzer.getFrame().getDstMacAddress()));
                 if (Arrays.equals(ali.getDstMacAddress(), analyzer.getFrame().getDstMacAddress()) || ali.getDstMacAddress() == null) {
-                    System.out.println("------------------------------> B");
+                    logger.debug("------------------------------> B");
                     if (analyzer.getFrame().getIsIpv4()) {
-                        System.out.println("------------------------------> C");
+                        logger.debug("------------------------------> C");
                         if (Arrays.equals(analyzer.getFrame().getIpv4parser().getSourceIPbyte(), ali.getSrcIpAddress()) || ali.getSrcIpAddress() == null) {
-                            System.out.println("------------------------------> D");
+                            logger.debug("------------------------------> D");
                             if (Arrays.equals(analyzer.getFrame().getIpv4parser().getDestinationIPbyte(), ali.getDstIpAddress()) || ali.getDstIpAddress() == null) {
-                                System.out.println("------------------------------> E");
-                                System.out.println("isICMP -> " + analyzer.getFrame().getIpv4parser().getIsIcmp() + " ali.IPv4 -> " + ali.getIpv4Protocol());
+                                logger.debug("------------------------------> E");
+                                logger.debug("isICMP -> " + analyzer.getFrame().getIpv4parser().getIsIcmp() + " ali.IPv4 -> " + ali.getIpv4Protocol());
                                 if (analyzer.getFrame().getIpv4parser().getIsIcmp() && ali.getIpv4Protocol().equals(1)) {
-                                    System.out.println("------------------------------> F");
+                                    logger.debug("------------------------------> F");
                                     ali.countFilterBlockage();
-                                    System.out.println("stav ali.getAction " + ali.getAction());
+                                    logger.debug("stav ali.getAction " + ali.getAction());
                                     if (!ali.getAction()) {
                                         logger.debug("packet DENY filtrom OK -> zhoda");
                                     } else {
@@ -107,7 +107,7 @@ public class AcccessList {
                                     }
                                     return ali.getAction();
                                 } else if (analyzer.getFrame().getIpv4parser().isIsTcp() && ali.getIpv4Protocol().equals(6)) {
-                                    System.out.println("------------------------------> G");
+                                    logger.debug("------------------------------> G");
                                     if (analyzer.getFrame().getIpv4parser().getTcpParser().getSourcePort().equals(ali.getSrcPort()) || ali.getSrcPort() == null) {
                                         if (analyzer.getFrame().getIpv4parser().getTcpParser().getDestinationPort().equals(ali.getDstPort()) || ali.getDstPort() == null) {
                                             if (!ali.getAction()) {
@@ -120,7 +120,7 @@ public class AcccessList {
                                         }
                                     }
                                 } else if (analyzer.getFrame().getIpv4parser().isIsUdp() && ali.getIpv4Protocol().equals(17)) {
-                                    System.out.println("------------------------------> H");
+                                    logger.debug("------------------------------> H");
                                     if (DataHelpers.toInt(analyzer.getFrame().getIpv4parser().getUdpParser().getSourcePort()).equals(ali.getSrcPort()) || ali.getSrcPort() == null) {
                                         if (DataHelpers.toInt(analyzer.getFrame().getIpv4parser().getUdpParser().getDestinationPort()).equals(ali.getDstPort()) || ali.getDstPort() == null) {
                                             if (!ali.getAction()) {
@@ -133,19 +133,19 @@ public class AcccessList {
                                         }
                                     }
                                 } else if (!analyzer.getFrame().getIpv4parser().isIsTcp() && !analyzer.getFrame().getIpv4parser().isIsUdp() && !analyzer.getFrame().getIpv4parser().getIsIcmp()) {
-                                    System.out.println("------------------------------> I");
+                                    logger.debug("------------------------------> I");
                                     return true;
                                 }
                             }
                         }
                     } else {
-                        System.out.println("------------------------------> J");
+                        logger.debug("------------------------------> J");
                         return true;
                     }
                 }
             }
         }
-        System.out.println("------------------------------> K");
+        logger.debug("------------------------------> K");
         logger.debug("presiel NOT AFFECTED filtrom OK -> ziadna zhoda");
         return true;
     }
