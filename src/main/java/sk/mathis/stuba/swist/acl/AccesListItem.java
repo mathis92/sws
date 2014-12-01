@@ -21,7 +21,7 @@ public class AccesListItem {
     private Integer srcPort;
     private Integer dstPort;
     private Integer priority;
-    private Integer direction;
+    private String direction;
     private Integer blockCount = 0;
     private Boolean action;
 
@@ -29,6 +29,7 @@ public class AccesListItem {
     this.priority = priority;
     }
 
+   
     
     public AccesListItem(byte[] srcMac, byte[] dstMac, byte[] srcIp, byte[] dstIp, Integer protocol, Integer port, Integer priority, Integer direction) {
         this.srcIpAddress = srcIp;
@@ -39,7 +40,7 @@ public class AccesListItem {
         this.ipv4Protocol = protocol;
         this.srcPort = port;
         this.priority = priority;
-        this.direction = direction;
+        
        
     }
 
@@ -84,7 +85,7 @@ public class AccesListItem {
         return ipv4Protocol;
     }
 
-    public void setDirection(Integer direction) {
+    public void setDirection(String direction) {
         this.direction = direction;
     }
 
@@ -137,7 +138,7 @@ public class AccesListItem {
         return priority;
     }
 
-    public Integer getDirection() {
+    public String getDirection() {
         return direction;
     }
 

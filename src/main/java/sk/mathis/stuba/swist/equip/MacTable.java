@@ -53,15 +53,19 @@ public class MacTable {
             for (MacAddress srcMac : interf.getSrcMacaddressList()) {
                 logger.debug("packet dstMac " + DataTypeHelper.macAdressConvertor(analyzer.getFrame().getDstMacAddress()) + " switch port mac address " + DataTypeHelper.macAdressConvertor(srcMac.getSrcMacAddress()));
                 logger.debug("mac table port " + interf.getDevice().getName() + " packet received on port " + packet.getDevice().getName());
-                if (Arrays.equals(analyzer.getFrame().getDstMacAddress(), srcMac.getSrcMacAddress()) && interf.getDevice().getName().equals(packet.getDevice().getName())) {
-                    logger.debug("switch cable mismatch");
+                if (Arrays.equals(analyzer.getFrame().getSrcMacAddress(), srcMac.getSrcMacAddress()) && !interf.getDevice().getName().equals(packet.getDevice().getName())) {
+                    System.out.println("switch cable mismatch");
                     mismatch = true;
+                    break;
                 }
+            }
+            if(mismatch == true){
+                break;
             }
         }
         if(mismatch == true ){
             
-            flushMacTable();
+            this.flushMacTable();
         }
 
     }

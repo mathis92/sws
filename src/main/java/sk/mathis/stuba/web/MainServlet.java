@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +18,6 @@ import sk.mathis.stuba.swist.sendreceive.SwitchManager;
 import sk.mathis.stuba.swist.equip.MacAddress;
 import sk.mathis.stuba.swist.sendreceive.PacketReceiver;
 import sk.mathis.stuba.swist.equip.ProtocolItem;
-import sk.mathis.stuba.swist.sendreceive.DeviceFinder;
 
 public class MainServlet extends HttpServlet {
 
@@ -121,8 +121,9 @@ public class MainServlet extends HttpServlet {
         switch (request.getRequestURI()) {
             case "/acl.html":
                 for (PacketReceiver rec : manager.getReceiverList()) {
-                    if (rec.getDevice().getName().equals(request.getParameter("port"))) {
-                        AccesListItem ali = new AccesListItem(rec.getAcl().getAcl("IN").size() + 1);
+                    if (rec.getDevice().getName().equals(request.getParameter("interface"))) {
+                        System.out.println("nasiel som spravny device item sem zapisat acl " + request.getParameter("interface"));
+                        AccesListItem ali = new AccesListItem(rec.getAcl().getAcl(request.getParameter("direction")).size() + 1);
                         if (!request.getParameter("srcMAC").equals("")) {
                             ali.setSrcMacAddress(DataTypeHelper.parseStringMacAddress(request.getParameter("srcMAC")));
 
@@ -153,32 +154,49 @@ public class MainServlet extends HttpServlet {
                         } else {
                             ali.setProtocol(null);
                         }
-                        if (!request.getParameter("srcTcpPort").equals("any")) {
-                            ali.setSrcPort(Integer.parseInt(request.getParameter("srcTcpPort")));
-                        } else {
-                            ali.setSrcPort(null);
+                        switch (request.getParameter("ipv4Protocol")) {
+                            case "6":
+                                if (!request.getParameter("srcTcpPort").equals("any")) {
+                                    ali.setSrcPort(Integer.parseInt(request.getParameter("srcTcpPort")));
+                                } else {
+                                    ali.setSrcPort(null);
+                                }
+                                if (!request.getParameter("dstTcpPort").equals("any")) {
+                                    ali.setDstPort(Integer.parseInt(request.getParameter("dstTcpPort")));
+                                } else {
+                                    ali.setDstPort(null);
+                                }
+                                break;
+                            case "17":
+                                if (!request.getParameter("srcUdpPort").equals("any")) {
+                                    ali.setSrcPort(Integer.parseInt(request.getParameter("srcUdpPort")));
+                                } else {
+                                    ali.setSrcPort(null);
+                                }
+                                if (!request.getParameter("dstUdpPort").equals("any")) {
+                                    ali.setDstPort(Integer.parseInt(request.getParameter("dstUdpPort")));
+                                } else {
+                                    ali.setDstPort(null);
+                                }
+                                break;
                         }
-                        if (!request.getParameter("dstTcpPort").equals("any")) {
-                            ali.setDstPort(Integer.parseInt(request.getParameter("dstTcpPort")));
-                        } else {
-                            ali.setDstPort(null);
-                        }
+                        System.out.println(ali.getAction() + " " + ali.getBlockCount() + " " + ali.getDirection() + " " + ali.getDstPort() + " " + ali.getSrcPort() + " " + ali.getProtocol());
                         logger.debug("VYTIAHNUTE Z POSTU " + request.getParameter("optionsRadios"));
                         if (request.getParameter("optionsRadios").equals("allow")) {
                             ali.setAction(Boolean.TRUE);
                         } else {
                             ali.setAction(Boolean.FALSE);
                         }
+                        ali.setDirection(request.getParameter("direction"));
                         rec.getAcl().addAclItem(ali, request.getParameter("direction"));
                         break;
                     }
                 }
-                response.sendRedirect("/acl.html");
+                response.sendRedirect("/acl.html?port="+request.getParameter("interface"));
                 break;
             case "/span.html":
-                
-                
-                manager.setSpan(request.getParameter("srcPort"), request.getParameter("dstPort"),request.getParameter("strip"));
+
+                manager.setSpan(request.getParameter("srcPort"), request.getParameter("dstPort"), request.getParameter("strip"));
 
                 response.sendRedirect("/span.html");
                 break;
@@ -209,17 +227,22 @@ public class MainServlet extends HttpServlet {
                                 + "Dst IP address<br>"
                                 + "IpV4Protocol<br>"
                                 + "Src Port<br>"
-                                + "Dst Port<br></td>"
+                                + "Dst Port<br>"
+                                + "Direction<br>"
+                                + "Action<br>"
+                                + "</td>"
                                 + "<td>" + ((item.getSrcMacAddress() == null) ? "Not set" : DataTypeHelper.macAdressConvertor(item.getSrcMacAddress())) + "<br>"
                                 + ((item.getDstMacAddress() == null) ? "Not set" : DataTypeHelper.macAdressConvertor(item.getDstMacAddress())) + "<br>"
                                 + ((item.getSrcIpAddress() == null) ? "Not set" : DataTypeHelper.ipAdressConvertor(item.getSrcIpAddress())) + "<br>"
                                 + ((item.getDstIpAddress() == null) ? "Not set" : DataTypeHelper.ipAdressConvertor(item.getDstIpAddress())) + "<br>"
                                 + ((item.getIpv4Protocol() == null) ? "Not set" : item.getIpv4Protocol()) + "<br>"
-                                + ((item.getSrcPort() == null) ? "Not set" : item.getSrcPort()) + "<br>"
-                                + ((item.getDstPort() == null) ? "Not set" : item.getDstPort()) + "<br>"
+                                + ((item.getSrcPort() == null) ? "Not set" : findSrcPort(item)) + "<br>"
+                                + ((item.getDstPort() == null) ? "Not set" : findDstPort(item)) + "<br>"
+                                + (item.getDirection()) + "<br>"
+                                + ((item.getAction() == true) ? "Permit" : "Drop") + "<br>"
                                 + "</td>"
                                 + "<td> "
-                                + item.getBlockCount() + " packets blocked"
+                                + item.getBlockCount() + " packets" + ((item.getAction() == true)? " permited" : " dropped")
                                 + "</td>"
                                 + "<td><a type=\"button\" class=\"close\" href=\"/acl.html?delete=" + port.getDevice().getName() + "/" + i + "/" + direction + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></td>"
                                 + "</tr>";
@@ -239,17 +262,22 @@ public class MainServlet extends HttpServlet {
                                 + "Dst IP address<br>"
                                 + "IpV4Protocol<br>"
                                 + "Src Port<br>"
-                                + "Dst Port<br></td>"
+                                + "Dst Port<br>"
+                                + "Direction<br>"
+                                + "Action<br>"
+                                + "</td>"
                                 + "<td>" + ((item.getSrcMacAddress() == null) ? "Not set" : DataTypeHelper.macAdressConvertor(item.getSrcMacAddress())) + "<br>"
                                 + ((item.getDstMacAddress() == null) ? "Not set" : DataTypeHelper.macAdressConvertor(item.getDstMacAddress())) + "<br>"
                                 + ((item.getSrcIpAddress() == null) ? "Not set" : DataTypeHelper.ipAdressConvertor(item.getSrcIpAddress())) + "<br>"
                                 + ((item.getDstIpAddress() == null) ? "Not set" : DataTypeHelper.ipAdressConvertor(item.getDstIpAddress())) + "<br>"
                                 + ((item.getIpv4Protocol() == null) ? "Not set" : item.getIpv4Protocol()) + "<br>"
-                                + ((item.getSrcPort() == null) ? "Not set" : item.getSrcPort()) + "<br>"
-                                + ((item.getDstPort() == null) ? "Not set" : item.getDstPort()) + "<br>"
+                                + ((item.getSrcPort() == null) ? "Not set" : findSrcPort(item)) + "<br>"
+                                + ((item.getDstPort() == null) ? "Not set" : findDstPort(item)) + "<br>"
+                                + (item.getDirection()) + "<br>"
+                                + ((item.getAction() == true) ? "Permit" : "Drop") + "<br>"
                                 + "</td>"
                                 + "<td> "
-                                + item.getBlockCount() + " packets blocked"
+                                + item.getBlockCount() + " packets" + ((item.getAction() == true)? " permited" : " dropped")
                                 + "</td>"
                                 + "<td><a type=\"button\" class=\"close\" href=\"/acl.html?delete=" + port.getDevice().getName() + "/" + i + "/" + direction + "\" ><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></td>"
                                 + "</tr>";
@@ -265,8 +293,14 @@ public class MainServlet extends HttpServlet {
 
     private String addSpanStats() {
         String line = "";
+        String strip = "";
         for (PcapIf srcPort : manager.getSpan().getSrcPort()) {
-            line += "<tr><td>" + srcPort.getName() + "</td><td>" + manager.getSpan().getDstPort().getName() + "</td><td>" + manager.getSpan().getSniffCount() + "</td></tr>";
+            if (manager.getSpan().getStrip()) {
+                strip = "yes";
+            } else {
+                strip = "no";
+            }
+            line += "<tr><td>" + srcPort.getName() + "</td><td>" + manager.getSpan().getDstPort().getName() + "</td><td>" + manager.getSpan().getSniffCount() + "</td><td>" + strip + "</td></tr>";
         }
         return line;
     }
@@ -291,8 +325,10 @@ public class MainServlet extends HttpServlet {
                                 // line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
                                 int i = 0;
                                 for (String portis : item.getTcpPort()) {
+                                    //  if (portis != null) {
                                     line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getTcpPortCount().get(i) + "</td></tr>";
                                     i++;
+                                    //  }
                                 }
                                 break;
                             }
@@ -300,11 +336,18 @@ public class MainServlet extends HttpServlet {
                                 //   line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
                                 int i = 0;
                                 for (String portis : item.getUdpPort()) {
+                                    //     if (portis != null) {
                                     line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getUdpPortCount().get(i) + "</td></tr>";
                                     i++;
+                                    //      }
                                 }
                                 break;
                             }
+                            case "other": {
+                              //  line += "<tr><td></td><td>" + "null" + "</td><td>" + item.getLayer() + "</td><td>" + item.getOtherCount() + "</td></tr>";
+                            }
+                            break;
+
                         }
 
                     }
@@ -318,8 +361,10 @@ public class MainServlet extends HttpServlet {
                                 // line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
                                 int i = 0;
                                 for (String portis : item.getTcpPort()) {
+                                    //           if (portis != null) {
                                     line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getTcpPortCount().get(i) + "</td></tr>";
                                     i++;
+                                    //         }
                                 }
                                 break;
                             }
@@ -327,11 +372,18 @@ public class MainServlet extends HttpServlet {
                                 //   line += "<tr><td>" + item.getProtocol() + "</td><td></td><td>" + item.getLayer() + "</td><td>" + item.getCount() + "</td></tr>";
                                 int i = 0;
                                 for (String portis : item.getUdpPort()) {
+                                    //         if (portis != null) {
                                     line += "<tr><td></td><td>" + portis + "</td><td>" + item.getLayer() + "</td><td>" + item.getUdpPortCount().get(i) + "</td></tr>";
                                     i++;
+                                    //        }
                                 }
                                 break;
                             }
+                            case "other": {
+                              //  line += "<tr><td></td><td>" + "null" + "</td><td>" + item.getLayer() + "</td><td>" + item.getOtherCount() + "</td></tr>";
+                            }
+                            break;
+
                         }
 
                     }
@@ -396,21 +448,26 @@ public class MainServlet extends HttpServlet {
                             rcvr.getAcl().deleteAclItem(Integer.parseInt(sa[1]) - 1, ((sa[2].equals("0")) ? "IN" : "OUT"));
                         }
                     }
-                    response.sendRedirect("/acl.html");
+                    response.sendRedirect("/acl.html?port="+sa[0]);
                 }
                 String pagehtml = ""
-                        + "<script type=\"text/javascript\">"
-                        + " $(document).ready(function(){"
-                        + " $(\"#srcTcpPort\").fadeOut(200);"
-                        + "     $(\"#dstTcpPort\").fadeOut(200);"
-                        + "$(\"select[name='ipv4Protocol']\").change(function(){"
-                        + " var id = $(this).val();"
-                        + " if (id === \"6\") {"
-                        + "     $(\"#srcTcpPort\").fadeIn(200);"
-                        + "     $(\"#dstTcpPort\").fadeIn(200);"
-                        + "}"
-                        + "});"
-                        + "});"
+                        + "<script type=\"text/javascript\">\n"
+                        + "                $(document).ready(function() {\n"
+                        + "                    $(\"#srcTcpPort\").fadeOut(200);\n"
+                        + "                    $(\"#dstTcpPort\").fadeOut(200);\n"
+                        + "                    $(\"#srcUdpPort\").fadeOut(200);\n"
+                        + "                    $(\"#dstUdpPort\").fadeOut(200);\n"
+                        + "                    $(\"select[name='ipv4Protocol']\").change(function() {\n"
+                        + "                        var id = $(ipv4Protocol).val();\n"
+                        + "                        if (id === \"6\") {\n"
+                        + "                            $(\"#srcTcpPort\").fadeIn(200);\n"
+                        + "                            $(\"#dstTcpPort\").fadeIn(200);\n"
+                        + "                        }else if (id === \"17\"){\n"
+                        + "                            $(\"#srcUdpPort\").fadeIn(200);\n"
+                        + "                            $(\"#dstUdpPort\").fadeIn(200);\n"
+                        + "                         }"
+                        + "                    });\n"
+                        + "                });\n"
                         + "</script>"
                         + "<br>"
                         + "<button type=\"button\" class=\"btn btn-primary btn-lg\" data-toggle=\"modal\" data-target=\"#myModal\">\n"
@@ -426,9 +483,9 @@ public class MainServlet extends HttpServlet {
                         + "             </div>\n"
                         + "             <div class=\"modal-body\">\n"
                         + "                 <div class=\"form-group\">\n"
-                        + "                     <label for=\"port\" class=\"col-sm-4 control-label\">Port</label>\n"
+                        + "                     <label for=\"interface\" class=\"col-sm-4 control-label\">Port</label>\n"
                         + "                         <div class=\"col-sm-8\">\n"
-                        + "                             <select name=\"port\">\n"
+                        + "                             <select name=\"interface\">\n"
                         + "                             <option value=\"eth1\">eth1</option>\n"
                         + "                             <option value=\"eth2\">eth2</option>\n"
                         + "                             <option value=\"eth3\">eth3</option>\n"
@@ -484,25 +541,39 @@ public class MainServlet extends HttpServlet {
                         + "                         </div>"
                         + "                 </div>"
                         + "                 <div class=\"form-group\" id=\"srcTcpPorts\">\n"
-                        + "                     <label for=\"srcTcpPort\" class=\"col-sm-4 control-label\">src TCP port</label>\n"
+                        + "                     <label for=\"srcTcpPort\" class=\"col-sm-4 control-label\">src Tcp port</label>\n"
                         + "                         <div class=\"col-sm-8\">\n"
                         + "                             <select name=\"srcTcpPort\">\n"
-                        + "                             <option value=\"any\">ANY</option>\n"
-                        + "                             <option value=\"80\">http</option>\n"
-                        + "                             <option value=\"22\">ssh</option>\n"
-                        + "                             <option value=\"21\">ftp</option>\n"
-                        + "                             </select>"
+                        + "                             <option value=\"any\">ANY</option>\n";
+                pagehtml += fillTcpPorts();
+                pagehtml += "                     </select>"
                         + "                         </div>"
                         + "                 </div>"
                         + "                 <div class=\"form-group\" id=\"dstTcpPorts\">\n"
-                        + "                     <label for=\"dstTcpPorts\" class=\"col-sm-4 control-label\">dst TCP port</label>\n"
+                        + "                     <label for=\"dstTcpPorts\" class=\"col-sm-4 control-label\">dst Tcp port</label>\n"
                         + "                         <div class=\"col-sm-8\">\n"
                         + "                             <select name=\"dstTcpPort\">\n"
-                        + "                             <option value=\"any\">ANY</option>\n"
-                        + "                             <option value=\"80\">http</option>\n"
-                        + "                             <option value=\"22\">ssh</option>\n"
-                        + "                             <option value=\"21\">ftp</option>\n"
-                        + "                             </select>"
+                        + "                             <option value=\"any\">ANY</option>\n";
+                pagehtml += fillTcpPorts();
+                pagehtml += "                     </select>"
+                        + "                         </div>"
+                        + "                 </div>"
+                        + "                 <div class=\"form-group\" id=\"srcTcpPorts\">\n"
+                        + "                     <label for=\"srcUdpPort\" class=\"col-sm-4 control-label\">src Udp port</label>\n"
+                        + "                         <div class=\"col-sm-8\">\n"
+                        + "                             <select name=\"srcUdpPort\">\n"
+                        + "                             <option value=\"any\">ANY</option>\n";
+                pagehtml += fillUdpPorts();
+                pagehtml += "                     </select>"
+                        + "                         </div>"
+                        + "                 </div>"
+                        + "                 <div class=\"form-group\" id=\"dstUdpPorts\">\n"
+                        + "                     <label for=\"dstTcpPorts\" class=\"col-sm-4 control-label\">dst Udp port</label>\n"
+                        + "                         <div class=\"col-sm-8\">\n"
+                        + "                             <select name=\"dstUdpPorts\">\n"
+                        + "                             <option value=\"any\">ANY</option>\n";
+                pagehtml += fillUdpPorts();
+                pagehtml += "                     </select>"
                         + "                         </div>"
                         + "                 </div>"
                         + "                 <div class=\"form-group\">\n"
@@ -622,8 +693,10 @@ public class MainServlet extends HttpServlet {
             case "/span.html": {
                 if (request.getParameter("stop") != null && !request.getParameter("stop").trim().isEmpty()) {
                     if ((request.getParameter("stop")).equals("jop")) {
-                        manager.getSpan().stopSpan();
-                        manager.setSpan(null);
+                        if (manager.getSpan() != null) {
+                            manager.getSpan().stopSpan();
+                            manager.setSpan(null);
+                        }
                     }
                     response.sendRedirect("/span.html");
                 }
@@ -688,7 +761,7 @@ public class MainServlet extends HttpServlet {
                         + "<br>"
                         + "<div class=\"panel panel-default\">\n"
                         + "  <div class=\"panel-heading\" >Sniffed ports</div>\n"
-                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Src. Port</th><th>Dst. Port</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Sniffed packet count </th>"
+                        + "  <table class=\"table\"><head><tr><th><span class=\"glyphicon glyphicon-resize-small\"></span> Src. Port</th><th>Dst. Port</th><th><span class=\"glyphicon glyphicon-refresh\"></span> Sniffed packet count </th><th>Strip dot1Q tag</th>"
                         + "<th><a type=\"button\" class=\"close\" href=\"/span.html?stop=jop\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></th>"
                         + "</tr></head>\n";
                 if (manager.getSpan() != null) {
@@ -716,6 +789,22 @@ public class MainServlet extends HttpServlet {
         }
     }
 
+    private String fillUdpPorts() {
+        String line = "";
+        for (Map.Entry<Integer, String> set : DataTypeHelper.udpMap.entrySet()) {
+            line += "<option value=" + set.getKey() + ">" + set.getValue() + "</option>";
+        }
+        return line;
+    }
+
+    private String fillTcpPorts() {
+        String line = "";
+        for (Map.Entry<Integer, String> set : DataTypeHelper.tcpMap.entrySet()) {
+            line += "<option value=" + set.getKey() + ">" + set.getValue() + "</option>";
+        }
+        return line;
+    }
+
     private String getNotFoundPage() {
         String html = "<div class=\"jumbotron\" style=\"margin-top: 15px;\">\n"
                 + "  <h1>Software multilayer switch</h1>\n"
@@ -726,7 +815,7 @@ public class MainServlet extends HttpServlet {
     }
 
     private String getHeaderTemplate() {
-        String html = "<!DOCTYPE html><html><head><title>Webis</title><meta charset=\"utf-8\">";
+        String html = "<!DOCTYPE html><html><head><title>Software Multilayer Switch</title><meta charset=\"utf-8\">";
         html += this.getLinkedJavascript("/resource/js/jquery.js");
         html += this.getLinkedCss("/resource/css/bootstrap.css");
         html += this.getLinkedCss("/resource/css/bootstrap-theme.css");
@@ -754,6 +843,30 @@ public class MainServlet extends HttpServlet {
                 + "        </div></body></html>";
 
         return html;
+    }
+
+    private String findSrcPort(AccesListItem item) {
+        String srcPort = "";
+        if (item.getIpv4Protocol() == 6) {
+            srcPort = DataTypeHelper.tcpMap.get(item.getSrcPort());
+
+        } else if (item.getIpv4Protocol() == 17) {
+            srcPort = DataTypeHelper.udpMap.get(item.getSrcPort());
+
+        }
+        return srcPort;
+    }
+
+    private String findDstPort(AccesListItem item) {
+        String dstPort = "";
+        if (item.getIpv4Protocol() == 6) {
+            dstPort = DataTypeHelper.tcpMap.get(item.getDstPort());
+
+        } else if (item.getIpv4Protocol() == 17) {
+            dstPort = DataTypeHelper.udpMap.get(item.getDstPort());
+
+        }
+        return dstPort;
     }
 
     private String getLinkedJavascript(String address) {

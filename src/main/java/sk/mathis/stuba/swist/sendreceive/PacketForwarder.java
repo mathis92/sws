@@ -90,11 +90,11 @@ public class PacketForwarder implements Runnable {
             crc32.update(frame, 0, frame.length);
             int crc = (int) (crc32.getValue() & 0xffffffff);
             byte[] crcOrig = ByteBuffer.allocate(4).putInt(crc).array();
-            byte[] crcPopici = new byte[crcOrig.length];
+            byte[] crcNew = new byte[crcOrig.length];
             for (int i = 0; i < crcOrig.length; i++) {
-                crcPopici[crcPopici.length - 1 - i] = crcOrig[i];
+                crcNew[crcNew.length - 1 - i] = crcOrig[i];
             }
-            baos.write(crcPopici);
+            baos.write(crcNew);
             pckt = new PcapPacket(packet);
             pckt.setByteArray(0, baos.toByteArray());
             return pckt;

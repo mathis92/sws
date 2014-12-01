@@ -87,7 +87,7 @@ public class PacketReceiver implements Runnable {
                         pckt = new Packet(packet, device, pcap, "OK");
                         logger.debug("packet na vstupe IN -> povoleny");
                     }
-                    buffer.add(pckt);
+                    
 
                     for (Interface iface : macTable.getInterfaceList()) {
                         if (iface.getDevice().getName().equals(device.getName())) {
@@ -102,11 +102,12 @@ public class PacketReceiver implements Runnable {
                             }
                             if (iface.getSrcMacaddressList().isEmpty() || macWritten.equals(0)) {
                                 //              logger.debug("adding mac address" + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
-                                logger.debug("pridavam mac adress do mac tabulky " + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
+                                System.out.println("pridavam mac adress do mac tabulky " + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
                                 iface.addMacAddress(packet.getByteArray(6, 6));
                             }
                         }
                     }
+                    buffer.add(pckt);
                 }
             }
 

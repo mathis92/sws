@@ -19,6 +19,7 @@ import sk.mathis.stuba.swist.equip.MacTable;
 import sk.mathis.stuba.swist.equip.Packet;
 import sk.mathis.stuba.swist.equip.MacAddress;
 import sk.mathis.stuba.swist.analysers.Analyser;
+import sk.mathis.stuba.swist.equip.DataTypeHelper;
 import sk.mathis.stuba.swist.equip.Span;
 
 /**
@@ -47,60 +48,46 @@ public class PacketSender {
 
     public void sendPacket(Packet packet) {
         sent = 0;
-        // logger.debug(packet.getPacket().getCaptureHeader().caplen());
+        // System.out.println(packet.getPacket().getCaptureHeader().caplen());
         this.packetByteArray = packet.getPacket().getByteArray(0, packet.getPacket().getCaptureHeader().caplen());
-
+        int inter = 0;
         for (Interface iface : macTable.getInterfaceList()) {
+           // System.out.println("\n interface cyklus " + inter + "\n");
+            inter++;
+            int macaddr = 0;
             for (MacAddress macaddress : iface.getSrcMacaddressList()) {
+            //    System.out.println("\n macaddr cyklus " + macaddr + "\n");
+                macaddr++;
                 if (Arrays.equals(macaddress.getSrcMacAddress(), packet.getPacket().getByteArray(0, 6))) {
-//                    logger.debug("Nasiel som cielovu mac adresu");
-
+                    System.out.println("Nasiel som cielovu mac adresu " + DataTypeHelper.macAdressConvertor(macaddress.getSrcMacAddress()) + "posielam na port " + iface.getDevice().getName());
+                    int rec = 0;
                     for (PacketReceiver rcvr : receivedList) {
-                        //                      logger.debug(pack.getDevice().getName() + " nazov zariadenia z received " + iface.getDevice().getName() + " nazov z interfaceu");
+             //           System.out.println("\n rcvr cyklus " + rec + "\n");
+                        rec++;
+                        System.out.println(packet.getDevice().getName() + " nazov zariadenia z received " + iface.getDevice().getName() + " nazov z interfaceu");
                         if (iface.getDevice().getName().equals(rcvr.getDevice().getName())) {
-                            logger.debug("SENDING PACKET FROM " + iface.getDevice().getName() + " TO " + packet.getDevice().getName());
-                            //                        logger.debug("posielam na " + pack.getDevice().getName());
-                            sent = 1;
-                            if (rcvr.getPcap() != null) {
-                                analyzer.analyzePacket(packet.getPacket());
-                                rcvr.getStatistic().storeDataOut(analyzer.getPacketProtocols());
-                                //logger.debug("packetla na vystupe  OUT - > "  +rcvr.getAcl().checkAcl(packet.getPacket(), "OUT"));
+                            if (!iface.getDevice().getName().equals(packet.getDevice().getName())) {
+                                System.out.println("SENDING PACKET FROM " + iface.getDevice().getName() + " TO " + packet.getDevice().getName());
+                                sent = 1;
+                                if (rcvr.getPcap() != null) {
+                                    analyzer.analyzePacket(packet.getPacket());
+                                    rcvr.getStatistic().storeDataOut(analyzer.getPacketProtocols());
+                                    //System.out.println("packetla na vystupe  OUT - > "  +rcvr.getAcl().checkAcl(packet.getPacket(), "OUT"));
 
-                                if (rcvr.getAcl().checkAcl(packet.getPacket(), "OUT")) {
-                                    logger.debug("ALLOWED packet na vystupe OUT");
-                                    /*
-                                     if (manager.getSpan() != null) {
-                                     if (packet.IsSpan()) {
-                                     System.out.println("packet na ktorom je aj span " + packet.getDevice().getName());
-                                     int i = 0;
-                                     for (PcapIf device : manager.getSpan().getSrcPort()) {
-                                     if (device.getName().equals(rcvr.getDevice().getName())) {
-                                     i++;
-                                     }
-                                     }
-                                     if (i > 0) {
-                                     if (!rcvr.getDevice().getName().equals(packet.getDevice().getName())) {
-                                     if (rcvr.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
-                                     System.err.println(packet.getPcap().getErr());
-                                     }
-                                     }
-                                     }
-                                     } else {
-                                     System.out.println("packet na ktorom nieje span " + packet.getDevice().getName());
-                                     if (rcvr.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
-                                     System.err.println(packet.getPcap().getErr());
-                                     }
-                                     }
-                                     } else {
-                                     */
-                                    if (rcvr.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
-                                        System.err.println(packet.getPcap().getErr());
+                                    if (rcvr.getAcl().checkAcl(packet.getPacket(), "OUT")) {
+                                        if (rcvr.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
+                                            System.err.println(packet.getPcap().getErr());
+                                        }
+                                        break;
+
+                                    } else {
+          //                              System.out.println("BLOCKED Packet na vystupe OUT");
                                     }
 
-                                } else {
-                                    logger.debug("BLOCKED Packet na vystupe OUT");
                                 }
-
+                            }else { 
+                                System.out.println("packet ide v ramci hubu");
+                                sent = 1;
                             }
                         }
 
@@ -109,23 +96,20 @@ public class PacketSender {
             }
         }
 
-        if (sent.equals(
-                0)) {
-            //      logger.debug("\n som v broadcaste \n");
-            logger.debug("BROADCAST");
-            //    System.out.println("broadcast");
+        if (sent.equals(0)) {
+            System.out.println("BROADCAST");
             for (PacketReceiver receiver : receivedList) {
                 if (receiver.getPcap() != null) {
                     if (!receiver.getDevice().getName().equals(packet.getDevice().getName())) {
-                        //   System.out.println("span " + manager.getSpan());
+                           System.out.println("span " + manager.getSpan());
                         if (manager.getSpan() != null) {
-                            //    System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+                                System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
 
                             if (!manager.getSpan().getDstPort().getName().equals(receiver.getDevice().getName())) {
                                 for (PcapIf srcPort : manager.getSpan().getSrcPort()) {
                                     if (!srcPort.getName().equals(packet.getDevice().getName())) {
                                         //   System.out.println("neposielam broatcast na span port " + manager.getSpan().getDstPort().getName());
-                                        logger.debug("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+          //                              System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
                                         if (receiver.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
                                             System.err.println(receiver.getPcap().getErr());
                                         }
@@ -133,13 +117,16 @@ public class PacketSender {
                                 }
                             }
                         } else {
-                            //   System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
-                            logger.debug("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+                               System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+         //                   System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+                            
                             if (receiver.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
                                 System.err.println(receiver.getPcap().getErr());
                             }
                         }
 
+                    } else { 
+                        System.out.println("som v broatcaste a chcem posielat na rovnaky port ");
                     }
                 }
             }

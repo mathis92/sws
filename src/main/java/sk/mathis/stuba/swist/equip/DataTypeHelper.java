@@ -15,7 +15,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -53,6 +59,24 @@ public class DataTypeHelper {
         return result;
 
     }
+public static Map sortByValue(Map map) {
+     List list = new LinkedList(map.entrySet());
+     Collections.sort(list, new Comparator() {
+          @Override
+          public int compare(Object o1, Object o2) {
+               return ((Comparable) ((Map.Entry) (o1)).getValue())
+              .compareTo(((Map.Entry) (o2)).getValue());
+          }
+     });
+
+    Map result = new LinkedHashMap();
+    for (Iterator it = list.iterator(); it.hasNext();) {
+        Map.Entry entry = (Map.Entry)it.next();
+        result.put(entry.getKey(), entry.getValue());
+    }
+    return result;
+} 
+
 
     public static String bToString(byte singleByte) {
         StringBuilder newString = new StringBuilder();
@@ -162,6 +186,8 @@ public class DataTypeHelper {
                     line = reader.readLine();
                 }
                 reader.close();
+                tcpMap = sortByValue(tcpMap);
+                udpMap = sortByValue(udpMap);
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(Analyser.class.getName()).log(Level.SEVERE, null, ex);
             }

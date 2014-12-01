@@ -53,6 +53,9 @@ public class Statistics {
                             item.getUdpPort().add(packetProtocols.getPort());
                             item.getUdpPortCount().add(1);
                             break;
+                        case "other":
+                            item.incrOther();
+                            break;
                     }
                     protocolListIn.add(item);
                 } else {
@@ -110,11 +113,16 @@ public class Statistics {
 
                                         }
                                         if (found == 0) {
+                                            
                                             protocol.getUdpPort().add(packetProtocols.getPort());
                                             protocol.getUdpPortCount().add(1);
                                         }
                                     }
                                     break;
+                                case "other": {
+                                    item.incrOther();
+                                }
+                                break;
                             }
                             logger.debug("protocol: " + protocol.getProtocol() + " vrstva: " + protocol.getLayer() + " pocet: " + protocol.getCount());
                             stored = 1;
@@ -130,6 +138,9 @@ public class Statistics {
                             case "UDP":
                                 item.getUdpPort().add(packetProtocols.getPort());
                                 item.getUdpPortCount().add(1);
+                                break;
+                            case "other":
+                                item.incrOther();
                                 break;
                         }
                         protocolListIn.add(item);
@@ -154,6 +165,9 @@ public class Statistics {
                         case "UDP":
                             item.getUdpPort().add(packetProtocols.getPort());
                             item.getUdpPortCount().add(1);
+                            break;
+                        case "other":
+                            item.incrOther();
                             break;
                     }
                     protocolListOut.add(item);
@@ -211,6 +225,9 @@ public class Statistics {
                                         }
                                     }
                                     break;
+                                case "other":
+                                    item.incrOther();
+                                    break;
                             }
                             logger.debug("protocol: " + protocol.getProtocol() + " vrstva: " + protocol.getLayer() + " pocet: " + protocol.getCount());
                             stored = 1;
@@ -226,6 +243,9 @@ public class Statistics {
                             case "UDP":
                                 item.getUdpPort().add(packetProtocols.getPort());
                                 item.getUdpPortCount().add(1);
+                                break;
+                            case "other":
+                                item.incrOther();
                                 break;
                         }
                         protocolListOut.add(item);

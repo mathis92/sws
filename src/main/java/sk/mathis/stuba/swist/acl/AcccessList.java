@@ -81,7 +81,7 @@ public class AcccessList {
     public Boolean checkAcl(PcapPacket packet, String direction) {
         analyzer.analyzePacket(packet);
         logger.debug("----------------> " + ((direction.equals("IN") ? "FOO" : "BAR")));
-        logger.debug("------------------------------> PICA BULHARSKA (" + this.toString() + ")");
+        
         for (AccesListItem ali : ((direction.equals("IN")) ? aclIn : aclOut)) {
             logger.debug("------------------------------> MEOW");
             if (Arrays.equals(ali.getSrcMacAddress(), analyzer.getFrame().getSrcMacAddress()) || ali.getSrcMacAddress() == null) {
@@ -96,7 +96,7 @@ public class AcccessList {
                             if (Arrays.equals(analyzer.getFrame().getIpv4parser().getDestinationIPbyte(), ali.getDstIpAddress()) || ali.getDstIpAddress() == null) {
                                 logger.debug("------------------------------> E");
                                 logger.debug("isICMP -> " + analyzer.getFrame().getIpv4parser().getIsIcmp() + " ali.IPv4 -> " + ali.getIpv4Protocol());
-                                if (analyzer.getFrame().getIpv4parser().getIsIcmp() && ali.getIpv4Protocol().equals(1)) {
+                                if (ali.getIpv4Protocol() == null || (analyzer.getFrame().getIpv4parser().getIsIcmp() && ali.getIpv4Protocol().equals(1))) {
                                     logger.debug("------------------------------> F");
                                     ali.countFilterBlockage();
                                     logger.debug("stav ali.getAction " + ali.getAction());

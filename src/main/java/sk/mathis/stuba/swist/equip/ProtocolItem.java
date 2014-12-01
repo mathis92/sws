@@ -21,6 +21,7 @@ public class ProtocolItem {
     private ArrayList<Integer> tcpPortCount = new ArrayList<>();
  private ArrayList<String> udpPort = new ArrayList<>();
     private ArrayList<Integer> udpPortCount = new ArrayList<>();
+    private Integer otherCount = 0;
     
     
     public ProtocolItem(String protocol, Integer layer) {
@@ -35,6 +36,12 @@ public class ProtocolItem {
         count++;
     }
 
+    public Integer getOtherCount() {
+        return otherCount;
+    }
+    public void incrOther(){
+        otherCount++;
+    }
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
