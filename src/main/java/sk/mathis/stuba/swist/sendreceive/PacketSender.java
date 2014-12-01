@@ -48,31 +48,31 @@ public class PacketSender {
 
     public void sendPacket(Packet packet) {
         sent = 0;
-        // System.out.println(packet.getPacket().getCaptureHeader().caplen());
+        // logger.debug(packet.getPacket().getCaptureHeader().caplen());
         this.packetByteArray = packet.getPacket().getByteArray(0, packet.getPacket().getCaptureHeader().caplen());
         int inter = 0;
         for (Interface iface : macTable.getInterfaceList()) {
-           // System.out.println("\n interface cyklus " + inter + "\n");
+           // logger.debug("\n interface cyklus " + inter + "\n");
             inter++;
             int macaddr = 0;
             for (MacAddress macaddress : iface.getSrcMacaddressList()) {
-            //    System.out.println("\n macaddr cyklus " + macaddr + "\n");
+            //    logger.debug("\n macaddr cyklus " + macaddr + "\n");
                 macaddr++;
                 if (Arrays.equals(macaddress.getSrcMacAddress(), packet.getPacket().getByteArray(0, 6))) {
-                    System.out.println("Nasiel som cielovu mac adresu " + DataTypeHelper.macAdressConvertor(macaddress.getSrcMacAddress()) + "posielam na port " + iface.getDevice().getName());
+                    logger.debug("Nasiel som cielovu mac adresu " + DataTypeHelper.macAdressConvertor(macaddress.getSrcMacAddress()) + "posielam na port " + iface.getDevice().getName());
                     int rec = 0;
                     for (PacketReceiver rcvr : receivedList) {
-             //           System.out.println("\n rcvr cyklus " + rec + "\n");
+             //           logger.debug("\n rcvr cyklus " + rec + "\n");
                         rec++;
-                        System.out.println(packet.getDevice().getName() + " nazov zariadenia z received " + iface.getDevice().getName() + " nazov z interfaceu");
+                        logger.debug(packet.getDevice().getName() + " nazov zariadenia z received " + iface.getDevice().getName() + " nazov z interfaceu");
                         if (iface.getDevice().getName().equals(rcvr.getDevice().getName())) {
                             if (!iface.getDevice().getName().equals(packet.getDevice().getName())) {
-                                System.out.println("SENDING PACKET FROM " + iface.getDevice().getName() + " TO " + packet.getDevice().getName());
+                                logger.debug("SENDING PACKET FROM " + iface.getDevice().getName() + " TO " + packet.getDevice().getName());
                                 sent = 1;
                                 if (rcvr.getPcap() != null) {
                                     analyzer.analyzePacket(packet.getPacket());
                                     rcvr.getStatistic().storeDataOut(analyzer.getPacketProtocols());
-                                    //System.out.println("packetla na vystupe  OUT - > "  +rcvr.getAcl().checkAcl(packet.getPacket(), "OUT"));
+                                    //logger.debug("packetla na vystupe  OUT - > "  +rcvr.getAcl().checkAcl(packet.getPacket(), "OUT"));
 
                                     if (rcvr.getAcl().checkAcl(packet.getPacket(), "OUT")) {
                                         if (rcvr.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
@@ -81,12 +81,12 @@ public class PacketSender {
                                         break;
 
                                     } else {
-          //                              System.out.println("BLOCKED Packet na vystupe OUT");
+          //                              logger.debug("BLOCKED Packet na vystupe OUT");
                                     }
 
                                 }
                             }else { 
-                                System.out.println("packet ide v ramci hubu");
+                                logger.debug("packet ide v ramci hubu");
                                 sent = 1;
                             }
                         }
@@ -97,19 +97,19 @@ public class PacketSender {
         }
 
         if (sent.equals(0)) {
-            System.out.println("BROADCAST");
+            logger.debug("BROADCAST");
             for (PacketReceiver receiver : receivedList) {
                 if (receiver.getPcap() != null) {
                     if (!receiver.getDevice().getName().equals(packet.getDevice().getName())) {
-                           System.out.println("span " + manager.getSpan());
+                           logger.debug("span " + manager.getSpan());
                         if (manager.getSpan() != null) {
-                                System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+                                logger.debug("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
 
                             if (!manager.getSpan().getDstPort().getName().equals(receiver.getDevice().getName())) {
                                 for (PcapIf srcPort : manager.getSpan().getSrcPort()) {
                                     if (!srcPort.getName().equals(packet.getDevice().getName())) {
-                                        //   System.out.println("neposielam broatcast na span port " + manager.getSpan().getDstPort().getName());
-          //                              System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+                                        //   logger.debug("neposielam broatcast na span port " + manager.getSpan().getDstPort().getName());
+          //                              logger.debug("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
                                         if (receiver.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
                                             System.err.println(receiver.getPcap().getErr());
                                         }
@@ -117,8 +117,8 @@ public class PacketSender {
                                 }
                             }
                         } else {
-                               System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
-         //                   System.out.println("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+                               logger.debug("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
+         //                   logger.debug("receiver.deviceName " + receiver.getDevice().getName() + " ||| " + " packet.deviceName" + packet.getDevice().getName());
                             
                             if (receiver.getPcap().sendPacket(packetByteArray) != Pcap.OK) {
                                 System.err.println(receiver.getPcap().getErr());
@@ -126,7 +126,7 @@ public class PacketSender {
                         }
 
                     } else { 
-                        System.out.println("som v broatcaste a chcem posielat na rovnaky port ");
+                        logger.debug("som v broatcaste a chcem posielat na rovnaky port ");
                     }
                 }
             }
@@ -136,14 +136,14 @@ public class PacketSender {
 
     public Boolean checkSpanPacket(String name) {
         for (PcapIf device : manager.getSpan().getSrcPort()) {
-            System.out.println("Matching " + name + " -> " + device.getName());
+            logger.debug("Matching " + name + " -> " + device.getName());
             if (name.equals(device.getName())) {
-                System.out.println("name " + name + " dev name " + device.getName() + "------------> true");
+                logger.debug("name " + name + " dev name " + device.getName() + "------------> true");
                 return true;
             }
         }
 
-        System.out.println("false");
+        logger.debug("false");
         return false;
     }
 }

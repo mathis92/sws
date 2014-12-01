@@ -48,7 +48,7 @@ public class SwitchManager {
     public void setSpan(String srcPortName, String dstPortName, String strip) {
         PcapIf srcDev = null;
         PcapIf dstDev = null;
-        System.out.println("zapol som span na portoch " + srcPortName + " -> " + dstPortName);
+        logger.debug("zapol som span na portoch " + srcPortName + " -> " + dstPortName);
         for (PacketReceiver rcvr : receiverList) {
             if (rcvr.getDevice().getName().equals(srcPortName)) {
                 srcDev = rcvr.getDevice();
@@ -65,11 +65,11 @@ public class SwitchManager {
                 if (span.getDstPort().getName().equals(dstDev.getName())) {
                     span.getSrcPort().add(srcDev);
                 }else { 
-                    System.out.println("chces pridavat span na dalsi port ty kokot");
+                    logger.debug("chces pridavat span na dalsi port ty kokot");
                 }
             }
         } else {
-            System.out.println("nenasiel som port");
+            logger.debug("nenasiel som port");
         }
     }
 

@@ -102,7 +102,7 @@ public class PacketReceiver implements Runnable {
                             }
                             if (iface.getSrcMacaddressList().isEmpty() || macWritten.equals(0)) {
                                 //              logger.debug("adding mac address" + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
-                                System.out.println("pridavam mac adress do mac tabulky " + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
+                                logger.debug("pridavam mac adress do mac tabulky " + DataTypeHelper.macAdressConvertor(packet.getByteArray(6, 6)));
                                 iface.addMacAddress(packet.getByteArray(6, 6));
                             }
                         }
