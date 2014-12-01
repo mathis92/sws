@@ -192,7 +192,7 @@ public class MainServlet extends HttpServlet {
                         break;
                     }
                 }
-                response.sendRedirect("/acl.html?port="+request.getParameter("interface"));
+                response.sendRedirect("/acl.html?port=" + request.getParameter("interface"));
                 break;
             case "/span.html":
 
@@ -242,7 +242,7 @@ public class MainServlet extends HttpServlet {
                                 + ((item.getAction() == true) ? "Permit" : "Drop") + "<br>"
                                 + "</td>"
                                 + "<td> "
-                                + item.getBlockCount() + " packets" + ((item.getAction() == true)? " permited" : " dropped")
+                                + item.getBlockCount() + " packets" + ((item.getAction() == true) ? " permited" : " dropped")
                                 + "</td>"
                                 + "<td><a type=\"button\" class=\"close\" href=\"/acl.html?delete=" + port.getDevice().getName() + "/" + i + "/" + direction + "\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></td>"
                                 + "</tr>";
@@ -277,7 +277,7 @@ public class MainServlet extends HttpServlet {
                                 + ((item.getAction() == true) ? "Permit" : "Drop") + "<br>"
                                 + "</td>"
                                 + "<td> "
-                                + item.getBlockCount() + " packets" + ((item.getAction() == true)? " permited" : " dropped")
+                                + item.getBlockCount() + " packets" + ((item.getAction() == true) ? " permited" : " dropped")
                                 + "</td>"
                                 + "<td><a type=\"button\" class=\"close\" href=\"/acl.html?delete=" + port.getDevice().getName() + "/" + i + "/" + direction + "\" ><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></a></td>"
                                 + "</tr>";
@@ -344,7 +344,7 @@ public class MainServlet extends HttpServlet {
                                 break;
                             }
                             case "other": {
-                              //  line += "<tr><td></td><td>" + "null" + "</td><td>" + item.getLayer() + "</td><td>" + item.getOtherCount() + "</td></tr>";
+                                //  line += "<tr><td></td><td>" + "null" + "</td><td>" + item.getLayer() + "</td><td>" + item.getOtherCount() + "</td></tr>";
                             }
                             break;
 
@@ -380,7 +380,7 @@ public class MainServlet extends HttpServlet {
                                 break;
                             }
                             case "other": {
-                              //  line += "<tr><td></td><td>" + "null" + "</td><td>" + item.getLayer() + "</td><td>" + item.getOtherCount() + "</td></tr>";
+                                //  line += "<tr><td></td><td>" + "null" + "</td><td>" + item.getLayer() + "</td><td>" + item.getOtherCount() + "</td></tr>";
                             }
                             break;
 
@@ -448,23 +448,32 @@ public class MainServlet extends HttpServlet {
                             rcvr.getAcl().deleteAclItem(Integer.parseInt(sa[1]) - 1, ((sa[2].equals("0")) ? "IN" : "OUT"));
                         }
                     }
-                    response.sendRedirect("/acl.html?port="+sa[0]);
+                    response.sendRedirect("/acl.html?port=" + sa[0]);
                 }
                 String pagehtml = ""
                         + "<script type=\"text/javascript\">\n"
                         + "                $(document).ready(function() {\n"
-                        + "                    $(\"#srcTcpPort\").fadeOut(200);\n"
-                        + "                    $(\"#dstTcpPort\").fadeOut(200);\n"
-                        + "                    $(\"#srcUdpPort\").fadeOut(200);\n"
-                        + "                    $(\"#dstUdpPort\").fadeOut(200);\n"
+                        + "                    $(\"#srcTcpPorts\").fadeOut(200);\n"
+                        + "                    $(\"#dstTcpPorts\").fadeOut(200);\n"
+                        + "                    $(\"#srcUdpPorts\").fadeOut(200);\n"
+                        + "                    $(\"#dstUdpPorts\").fadeOut(200);\n"
                         + "                    $(\"select[name='ipv4Protocol']\").change(function() {\n"
-                        + "                        var id = $(ipv4Protocol).val();\n"
+                        + "                        var id = $(\"select[name='ipv4Protocol']\").val();\n"
                         + "                        if (id === \"6\") {\n"
-                        + "                            $(\"#srcTcpPort\").fadeIn(200);\n"
-                        + "                            $(\"#dstTcpPort\").fadeIn(200);\n"
+                        + "                             $(\"#srcUdpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#dstUdpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#srcTcpPorts\").fadeIn(200);\n"
+                        + "                             $(\"#dstTcpPorts\").fadeIn(200);\n"
                         + "                        }else if (id === \"17\"){\n"
-                        + "                            $(\"#srcUdpPort\").fadeIn(200);\n"
-                        + "                            $(\"#dstUdpPort\").fadeIn(200);\n"
+                        + "                             $(\"#srcTcpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#dstTcpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#srcUdpPorts\").fadeIn(200);\n"
+                        + "                             $(\"#dstUdpPorts\").fadeIn(200);\n"
+                        + "                         }else { "
+                        + "                             $(\"#srcTcpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#dstTcpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#srcUdpPorts\").fadeOut(200);\n"
+                        + "                             $(\"#dstUdpPorts\").fadeOut(200);\n"
                         + "                         }"
                         + "                    });\n"
                         + "                });\n"
@@ -529,7 +538,7 @@ public class MainServlet extends HttpServlet {
                         + "                         <br>"
                         + "                     </div>\n"
                         + "                 </div>\n"
-                        + "                 <div class=\"form-group\">\n"
+                        + "                 <div class=\"form-group\" id=\"ipv4protocols\">\n"
                         + "                     <label for=\"Ipv4Protocol\" class=\"col-sm-4 control-label\">IPv4 Protocol</label>\n"
                         + "                         <div class=\"col-sm-8\">\n"
                         + "                             <select name=\"ipv4Protocol\">\n"
@@ -558,7 +567,7 @@ public class MainServlet extends HttpServlet {
                 pagehtml += "                     </select>"
                         + "                         </div>"
                         + "                 </div>"
-                        + "                 <div class=\"form-group\" id=\"srcTcpPorts\">\n"
+                        + "                 <div class=\"form-group\" id=\"srcUdpPorts\">\n"
                         + "                     <label for=\"srcUdpPort\" class=\"col-sm-4 control-label\">src Udp port</label>\n"
                         + "                         <div class=\"col-sm-8\">\n"
                         + "                             <select name=\"srcUdpPort\">\n"
